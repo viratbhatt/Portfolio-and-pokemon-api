@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import portfolioData from '../data/portfolio.json'
 import { projects, type Project } from '../data/projects'
+import PortfolioChat from './PortfolioChat'
+import useTheme from '../hooks/useTheme'
 
 const { personal, experiences: EXPERIENCES, skillGroups: SKILL_GROUPS, contact, skillsSubheading } = portfolioData
-
-type Theme = 'light' | 'dark'
 
 const navigationItems = [
   { label: 'Work', href: '#work' },
@@ -35,17 +35,7 @@ const careerHighlights = [
 function Home() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === 'undefined') return 'light'
-    const stored = window.localStorage.getItem('portfolio-theme') as Theme | null
-    if (stored === 'light' || stored === 'dark') return stored
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-  })
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    window.localStorage.setItem('portfolio-theme', theme)
-  }, [theme])
+  const { theme, toggleTheme } = useTheme()
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -119,7 +109,7 @@ function Home() {
               type="button"
               className="theme-toggle"
               aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              onClick={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
+              onClick={toggleTheme}
             >
               {theme === 'dark' ? 'Light' : 'Dark'}
             </button>
@@ -502,6 +492,8 @@ function Home() {
           </div>
         </div>
       )}
+
+      <PortfolioChat />
     </div>
   )
 }

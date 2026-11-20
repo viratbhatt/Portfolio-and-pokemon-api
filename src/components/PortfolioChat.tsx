@@ -328,7 +328,7 @@ export default function PortfolioChat() {
               </div>
             </form>
             <p className="portfolio-chat-note">
-              {speechSupported ? 'Voice input uses your browser. ' : ''}AI can make mistakes.
+              {speechSupported ? 'Voice input uses your browser. ' : ''}Google AI can make mistakes.
             </p>
           </footer>
         </section>

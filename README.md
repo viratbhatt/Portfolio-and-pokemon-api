@@ -1,38 +1,44 @@
 # Virat Bhatt's portfolio
 
-A React and TypeScript portfolio with a local AI assistant that answers questions using the site's profile, experience, skills, and project data.
+A React and TypeScript portfolio with a Google Gemini AI assistant that answers questions using the site's profile, experience, skills, and project data.
 
 ## Run the site
 
 ```bash
 npm install
+```
+
+Copy the environment template:
+
+```bash
+cp .env.example .env.local
+```
+
+In `.env.local`, replace `your-google-ai-api-key` with your Google AI API key:
+
+```bash
+GEMINI_API_KEY=your-google-ai-api-key
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Start the site:
+
+```bash
 npm run dev
 ```
 
-## Local AI assistant
+Restart Vite after changing the environment file. Ollama is no longer required.
 
-The chat widget calls Ollama's `/api/chat` endpoint directly from the browser. Its default configuration is:
+## How the assistant works
 
-```bash
-VITE_OLLAMA_URL=http://localhost:11434
-VITE_OLLAMA_MODEL=gemma4:12b-mlx
-```
+The browser sends chat messages to the same-origin `/api/chat` endpoint. The Vite middleware in `server/geminiChat.ts` adds the portfolio context and calls Google's Gemini API. The key is read by the server and is never included in the browser bundle.
 
-Copy `.env.example` to `.env.local` to override either value, then restart Vite. Vite environment variables are public browser configuration, so do not put secrets in them.
+Keep `GEMINI_API_KEY` secret and never rename it with a `VITE_` prefix: Vite exposes variables with that prefix to browser code. `.env.local` is already excluded from Git.
 
-Start Ollama and make sure the configured model is installed:
+The assistant uses `gemini-2.5-flash` by default. Set `GEMINI_MODEL` to another Gemini model supported by your API key if needed. Chat requests and API responses are not stored by this application.
 
-```bash
-ollama pull gemma4:12b-mlx
-ollama serve
-```
+Conversations keep up to six recent messages, preserving complete exchanges, and condense older context into a rolling summary held in browser memory. New user questions are limited to 500 characters; previous assistant answers can be longer. The server logs Gemini input, output, thinking, and total token counts without logging message contents.
 
-If the browser cannot connect because of CORS, restart Ollama with the site's origin allowed:
+## Deployment
 
-```bash
-OLLAMA_ORIGINS=http://localhost:5173 ollama serve
-```
-
-The Ollama request is isolated in `src/services/ollama.ts`. Replace that client with a request to a middle layer when one is available; the chat component does not need to change.
-
-**Local-only limitation:** in direct mode, `localhost` is the device of the person viewing the site. A deployed website will therefore look for Ollama on each visitor's own device. Use a middle layer or a reachable Ollama host before making the assistant publicly available.
+The chat endpoint runs in both `vite` and `vite preview`. The existing Cloudflare tunnel can continue forwarding to port 5173; restart the Vite process after adding the key. Do not deploy only the static `dist` directory unless you also deploy an equivalent `/api/chat` backend, because static hosting cannot keep the API key server-side.

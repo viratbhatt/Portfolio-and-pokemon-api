@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { askPortfolioAssistant, type ChatMessage } from '../services/ollama'
+import {
+  askPortfolioAssistant,
+  type ChatMessage,
+  type ConversationContext,
+} from '../services/portfolioAssistant'
 import './PortfolioChat.css'
 
 type DisplayMessage = ChatMessage & { id: number }
@@ -63,6 +67,7 @@ export default function PortfolioChat() {
   const launcherRef = useRef<HTMLButtonElement>(null)
   const messagesRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const conversationContextRef = useRef<ConversationContext>({ summary: '', summarizedMessageCount: 0 })
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const voiceInputStartRef = useRef('')
 
@@ -165,10 +170,15 @@ export default function PortfolioChat() {
     abortRef.current = controller
 
     try {
-      const answer = await askPortfolioAssistant(conversation, controller.signal)
+      const result = await askPortfolioAssistant(
+        conversation,
+        controller.signal,
+        conversationContextRef.current,
+      )
+      conversationContextRef.current = result.context
       setMessages((current) => [
         ...current,
-        { id: ++nextMessageId.current, role: 'assistant', content: answer },
+        { id: ++nextMessageId.current, role: 'assistant', content: result.answer },
       ])
     } catch (caughtError) {
       if (!controller.signal.aborted) {
@@ -318,7 +328,7 @@ export default function PortfolioChat() {
               </div>
             </form>
             <p className="portfolio-chat-note">
-              {speechSupported ? 'Voice input uses your browser. ' : ''}Local AI can make mistakes.
+              {speechSupported ? 'Voice input uses your browser. ' : ''}AI can make mistakes.
             </p>
           </footer>
         </section>
